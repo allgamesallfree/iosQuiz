@@ -12,6 +12,7 @@
 @interface MasterViewController ()
 
 @property NSMutableArray *objects;
+@property NSArray *allEntries;
 @end
 
 @implementation MasterViewController
@@ -23,10 +24,24 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
-    self.navigationItem.leftBarButtonItem = self.editButtonItem;
-
-    UIBarButtonItem *addButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(insertNewObject:)];
-    self.navigationItem.rightBarButtonItem = addButton;
+   // self.navigationItem.leftBarButtonItem = self.editButtonItem;
+  //  UIBarButtonItem *addButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(insertNewObject:)];
+  //  self.navigationItem.rightBarButtonItem = addButton;
+    PFQuery *query = [PFQuery queryWithClassName:@"TestObject"];
+    NSMutableArray *allObjects = [NSMutableArray array];
+    [query findObjectsInBackgroundWithBlock:^(NSArray *objects, NSError *error) {
+        if (!error) {
+            // The find succeeded. The first 100 objects are available in objects
+            [allObjects addObjectsFromArray:objects];
+            for (int i = 0; i < objects.count; i++) {
+                [self.tableView reloadData];
+                [self insertRow:[objects objectAtIndex:i]];
+            }
+        } else {
+            // Log details of the failure
+            NSLog(@"Error: %@ %@", error, [error userInfo]);
+        }
+    }];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -43,13 +58,22 @@
     [self.tableView insertRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
 }
 
+-(void)insertRow:(PFObject*)object {
+    if (!self.objects) {
+        self.objects = [[NSMutableArray alloc] init];
+    }
+    [self.objects addObject:object];
+    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:0 inSection:0];
+    [self.tableView insertRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
+}
+
 #pragma mark - Segues
 
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
     if ([[segue identifier] isEqualToString:@"showDetail"]) {
         NSIndexPath *indexPath = [self.tableView indexPathForSelectedRow];
-        NSDate *object = self.objects[indexPath.row];
-        [[segue destinationViewController] setDetailItem:object];
+        PFObject *entry = self.objects[indexPath.row];
+        [[segue destinationViewController] setDetailItem:entry];
     }
 }
 
@@ -65,9 +89,12 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"Cell" forIndexPath:indexPath];
-
-    NSDate *object = self.objects[indexPath.row];
-    cell.textLabel.text = [object description];
+    PFObject *entry = self.objects[indexPath.row];
+    NSString *title = entry[@"Title"];
+    NSString *date = [NSDateFormatter localizedStringFromDate:entry.createdAt dateStyle:NSDateFormatterShortStyle timeStyle:NSDateFormatterNoStyle];
+    NSString *image = entry[@"Image"];
+    NSString *fullLabel = [NSString stringWithFormat: @"%@ %@ %@", title, date, image];
+    cell.textLabel.text = fullLabel;
     return cell;
 }
 

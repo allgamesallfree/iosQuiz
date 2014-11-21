@@ -27,8 +27,16 @@
 
 - (void)configureView {
     // Update the user interface for the detail item.
+    PFObject *entry = self.detailItem;
+    NSString *title = entry[@"Title"];
+    NSString *description = entry[@"Description"];
+    NSString *image = entry[@"Image"];
+    UIImageView *someImageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 60, 320, 200)];
+    someImageView.image =[UIImage imageNamed:image];
     if (self.detailItem) {
-        self.detailDescriptionLabel.text = [self.detailItem description];
+        self.title = title;
+        self.detailDescriptionLabel.text = description;
+        [self.view addSubview:someImageView];
     }
 }
 

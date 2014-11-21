@@ -7,9 +7,12 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <Parse/Parse.h>
 
 @interface MasterViewController : UITableViewController
 
+
+-(void)insertRow:(PFObject*)object;
 
 @end
 
